@@ -599,6 +599,10 @@
 
       if(fcContext && fcContext.user && fcContext.user.fid){
         hasClaimed = await checkClaimed(fcContext.user.fid, walletAddress);
+        if(hasClaimed && currentTier){
+          renderClaimedState();
+          return;
+        }
       }
 
       setStatus('');
@@ -670,6 +674,9 @@
   }
 
   function renderClaimedState(){
+    const mainCard = el('mainCard');
+    if(mainCard) mainCard.style.display = 'none';
+
     const actionCard = el('actionCard');
     actionCard.style.borderColor = 'var(--success)';
     actionCard.style.background = 'var(--success-soft)';
