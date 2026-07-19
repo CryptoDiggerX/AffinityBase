@@ -1,0 +1,13 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "AffinityBase",
+    "iconUrl": "https://affinity-base.vercel.app/icon.png",
+    "homeUrl": "https://affinity-base.vercel.app",
+    "imageUrl": "https://affinity-base.vercel.app/og.png",
+    "buttonTitle": "Claim $AFBS",
+    "splashImageUrl": "https://affinity-base.vercel.app/splash.png",
+    "splashBackgroundColor": "#F2ECDF",
+    "webhookUrl": "https://affinity-base.vercel.app/api/webhook"
+  }
+}
