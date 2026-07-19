@@ -638,9 +638,13 @@
         return;
       }
 
-      setStatus('Recording claim…');
+      // Payment confirmed — show success immediately.
+      hasClaimed = true;
+      renderClaimedState();
 
-      const res = await fetch('/api/claim', {
+      // Record the claim in the background. Never surface failures here;
+      // distribution happens later from whatever the backend has recorded.
+      fetch('/api/claim', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -652,19 +656,14 @@
           score: userScore,
           txHash
         })
+      }).then(async (res) => {
+        if(!res.ok){
+          const body = await res.text();
+          console.error('claim record failed (background)', res.status, body, txHash);
+        }
+      }).catch((bgErr) => {
+        console.error('claim record request failed (background)', bgErr, txHash);
       });
-
-      if(!res.ok){
-        const body = await res.text();
-        console.error('claim record failed', res.status, body);
-        setStatus('Payment sent, but recording it failed. Contact support with your tx hash.', 'error');
-        btn.disabled = false;
-        setButtonState();
-        return;
-      }
-
-      hasClaimed = true;
-      renderClaimedState();
     }catch(e){
       console.error(e);
       setStatus('Something went wrong. Try again.', 'error');
