@@ -502,12 +502,16 @@
   async function fetchScore(fid){
     try{
       const res = await fetch('/api/score?fid=' + fid);
-      if(!res.ok) throw new Error('score lookup failed');
+      if(!res.ok){
+        const body = await res.text();
+        console.error('score fetch failed', res.status, body);
+        return null;
+      }
       const data = await res.json();
-      return typeof data.score === 'number' ? data.score : 0;
+      return typeof data.score === 'number' ? data.score : null;
     }catch(e){
       console.error(e);
-      return 0;
+      return null;
     }
   }
 
@@ -677,8 +681,14 @@
         if(context && context.user){
           el('fcUser').textContent = context.user.username ? '@' + context.user.username : ('fid ' + context.user.fid);
           userScore = await fetchScore(context.user.fid);
-          currentTier = computeTier(userScore);
-          updateEligibilityUI();
+          if(userScore === null){
+            el('neynarScore').textContent = 'error';
+            el('tierBadge').textContent = 'Score unavailable';
+            setStatus('Could not fetch your Neynar score. Try reconnecting or reload.', 'error');
+          } else {
+            currentTier = computeTier(userScore);
+            updateEligibilityUI();
+          }
           setButtonState();
         } else {
           el('fcUser').textContent = 'Not detected';
