@@ -25,6 +25,8 @@
     --gold-soft: #C79A4B;
     --forest: #3F5C42;
     --forest-soft: #E4EADF;
+    --success: #2E7D4F;
+    --success-soft: #E1F3E7;
     --white: #FBF9F3;
     --error: #A8402F;
   }
@@ -276,8 +278,8 @@
   .claimed-icon{
     width: 52px; height:52px;
     border-radius:50%;
-    background: var(--forest-soft);
-    color: var(--forest);
+    background: var(--success-soft);
+    color: var(--success);
     display:flex; align-items:center; justify-content:center;
     margin: 0 auto 16px;
     font-size: 24px;
@@ -286,6 +288,7 @@
     font-family:'Fraunces', serif;
     font-weight: 600;
     font-size: 20px;
+    color: var(--success);
     margin-bottom: 8px;
   }
   .claimed-note{
@@ -613,14 +616,23 @@
       btn.disabled = true;
       setStatus('Confirm in your wallet…');
 
-      const txHash = await ethProvider.request({
-        method:'eth_sendTransaction',
-        params:[{
-          from: walletAddress,
-          to: RECEIVER,
-          value: CLAIM_FEE_WEI
-        }]
-      });
+      let txHash;
+      try{
+        txHash = await ethProvider.request({
+          method:'eth_sendTransaction',
+          params:[{
+            from: walletAddress,
+            to: RECEIVER,
+            value: CLAIM_FEE_WEI
+          }]
+        });
+      }catch(txErr){
+        console.error(txErr);
+        setStatus('Transaction rejected in wallet.', 'error');
+        btn.disabled = false;
+        setButtonState();
+        return;
+      }
 
       setStatus('Recording claim…');
 
@@ -638,13 +650,20 @@
         })
       });
 
-      if(!res.ok) throw new Error('claim record failed');
+      if(!res.ok){
+        const body = await res.text();
+        console.error('claim record failed', res.status, body);
+        setStatus('Payment sent, but recording it failed. Contact support with your tx hash.', 'error');
+        btn.disabled = false;
+        setButtonState();
+        return;
+      }
 
       hasClaimed = true;
       renderClaimedState();
     }catch(e){
       console.error(e);
-      setStatus('Claim failed or rejected. Try again.', 'error');
+      setStatus('Something went wrong. Try again.', 'error');
       btn.disabled = false;
       setButtonState();
     }
@@ -652,10 +671,12 @@
 
   function renderClaimedState(){
     const actionCard = el('actionCard');
+    actionCard.style.borderColor = 'var(--success)';
+    actionCard.style.background = 'var(--success-soft)';
     actionCard.innerHTML = `
       <div class="claimed-card">
         <div class="claimed-icon">✓</div>
-        <div class="claimed-title">Claim recorded</div>
+        <div class="claimed-title">Successfully Claimed</div>
         <div class="claimed-note">${currentTier.amount.toLocaleString()} $AFBS reserved for your wallet.<br/>Tokens distribute at TGE — August 10.</div>
       </div>
     `;
