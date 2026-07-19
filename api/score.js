@@ -17,13 +17,15 @@ module.exports = async function handler(req, res) {
       {
         headers: {
           accept: 'application/json',
-          api_key: NEYNAR_API_KEY
+          'x-api-key': NEYNAR_API_KEY
         }
       }
     );
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: 'Neynar lookup failed' });
+      const errBody = await response.text();
+      console.error('Neynar error', response.status, errBody);
+      return res.status(response.status).json({ error: 'Neynar lookup failed', detail: errBody });
     }
 
     const data = await response.json();
@@ -38,4 +40,3 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Internal error' });
   }
 };
-
