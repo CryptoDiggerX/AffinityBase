@@ -461,6 +461,7 @@
   let currentTier = null;
   let walletAddress = null;
   let hasClaimed = false;
+  let ethProvider = null;
 
   const el = (id) => document.getElementById(id);
 
@@ -554,26 +555,26 @@
   }
 
   async function connectWallet(){
-    if(!window.ethereum){
-      setStatus('No wallet found. Open in a wallet browser.', 'error');
+    if(!ethProvider){
+      setStatus('No wallet found. Open in Warpcast or a wallet browser.', 'error');
       return;
     }
     try{
       setStatus('Connecting…');
-      const accounts = await window.ethereum.request({ method:'eth_requestAccounts' });
+      const accounts = await ethProvider.request({ method:'eth_requestAccounts' });
       walletAddress = accounts[0];
       el('walletAddr').textContent = short(walletAddress);
 
-      const chainId = await window.ethereum.request({ method:'eth_chainId' });
+      const chainId = await ethProvider.request({ method:'eth_chainId' });
       if(chainId !== BASE_CHAIN_ID_HEX){
         try{
-          await window.ethereum.request({
+          await ethProvider.request({
             method:'wallet_switchEthereumChain',
             params:[{ chainId: BASE_CHAIN_ID_HEX }]
           });
         }catch(switchErr){
           if(switchErr.code === 4902){
-            await window.ethereum.request({
+            await ethProvider.request({
               method:'wallet_addEthereumChain',
               params:[{
                 chainId: BASE_CHAIN_ID_HEX,
@@ -608,7 +609,7 @@
       btn.disabled = true;
       setStatus('Confirm in your wallet…');
 
-      const txHash = await window.ethereum.request({
+      const txHash = await ethProvider.request({
         method:'eth_sendTransaction',
         params:[{
           from: walletAddress,
@@ -682,14 +683,22 @@
         } else {
           el('fcUser').textContent = 'Not detected';
         }
+        try{
+          ethProvider = await sdk.wallet.getEthereumProvider();
+        }catch(walletErr){
+          console.error('wallet provider unavailable', walletErr);
+          ethProvider = window.ethereum || null;
+        }
         sdk.actions.ready();
       } else {
         el('fcUser').textContent = 'Open in Farcaster';
+        ethProvider = window.ethereum || null;
         setStatus('Open this app inside Farcaster to check eligibility.', 'error');
       }
     }catch(e){
       console.error(e);
       el('fcUser').textContent = 'Unavailable';
+      ethProvider = window.ethereum || null;
     }
   }
 
